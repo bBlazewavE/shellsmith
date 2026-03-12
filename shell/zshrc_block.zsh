@@ -1,4 +1,9 @@
-# === AI Dev Workflow ===
+# === Shellsmith ===
+
+# Nix
+if [[ -e /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh ]]; then
+  . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+fi
 
 # Don't error on unmatched globs (fixes "no matches found" with ? * [] in commands)
 setopt NO_NOMATCH
