@@ -1,42 +1,72 @@
-# AI Dev Workflow
+# Shellsmith
 
-A complete AI-powered development environment for macOS. One command sets up Neovim, Claude Code, Pi, Ralph, tmux, and all supporting tools.
+A complete AI-powered development environment for macOS. Declarative packages via **Nix**, composable setup via **Just**, reproducible on any Mac.
 
 ## Quick Start
 
-### Clone and install
+### Fresh Mac
 
 ```bash
-git clone https://github.com/bBlazewavE/development-wf.git ~/.development-wf
-cd ~/.development-wf && chmod +x install.sh && ./install.sh
+git clone https://github.com/bBlazewavE/shellsmith.git ~/.shellsmith
+cd ~/.shellsmith
+./bootstrap.sh                      # installs Xcode CLI tools + Nix
+nix develop --command just setup    # links configs, injects zshrc, installs Ralph + npm extras
 source ~/.zshrc
 ```
 
-### One-liner (curl)
+### Existing Mac (Nix already installed)
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/bBlazewavE/development-wf/main/install.sh)
+cd ~/.shellsmith
+nix develop --command just setup
 ```
 
-> **Note:** The one-liner requires the repo to be cloned first for symlinks to work. Use the clone method above for a full install.
+## Architecture
+
+```
+flake.nix              ← declares all packages (Nix devShell)
+justfile               ← recipes: setup, link, zshrc, ralph, npm, status, clean, update
+bootstrap.sh           ← one-time script (Xcode CLI + Nix)
+shell/zshrc_block.zsh  ← shell config injected into ~/.zshrc
+nvim/                  ← Neovim config (symlinked to ~/.config/nvim)
+tmux/                  ← tmux config (symlinked to ~/.tmux.conf)
+```
+
+**Install flow:** `bootstrap.sh` → `nix develop` → `just setup`
 
 ## What Gets Installed
 
 | Tool | Purpose | Installed via |
 |------|---------|--------------|
-| **Neovim** | Primary editor with LSP, completion, fuzzy finding | Homebrew |
-| **tmux** | Terminal multiplexer for multi-pane sessions | Homebrew |
-| **Claude Code** | AI coding assistant (CLI) | npm |
+| **Neovim** | Primary editor with LSP, completion, fuzzy finding | Nix |
+| **tmux** | Terminal multiplexer for multi-pane sessions | Nix |
+| **Claude Code** | AI coding assistant (CLI) | Nix (community flake) |
 | **Pi** | AI coding agent | npm |
 | **Ralph** | AI task orchestrator | git clone |
-| **lazygit** | Terminal UI for git | Homebrew |
-| **fzf** | Fuzzy finder (files, history, dirs) | Homebrew |
-| **fd** | Fast file finder (used by fzf/Telescope) | Homebrew |
-| **ripgrep** | Fast text search (used by Telescope) | Homebrew |
-| **yazi** | Terminal file manager | Homebrew |
-| **Starship** | Cross-shell prompt | Homebrew |
-| **gh** | GitHub CLI | Homebrew |
-| **Node.js** | Required for npm packages & LSP servers | Homebrew |
+| **lazygit** | Terminal UI for git | Nix |
+| **fzf** | Fuzzy finder (files, history, dirs) | Nix |
+| **fd** | Fast file finder (used by fzf/Telescope) | Nix |
+| **ripgrep** | Fast text search (used by Telescope) | Nix |
+| **yazi** | Terminal file manager | Nix |
+| **Starship** | Cross-shell prompt | Nix |
+| **gh** | GitHub CLI | Nix |
+| **Node.js 22** | Required for npm packages & LSP servers | Nix |
+| **Just** | Command runner for setup recipes | Nix |
+
+## Just Recipes
+
+| Recipe | What it does |
+|--------|-------------|
+| `just setup` | Runs link, zshrc, ralph, npm (default) |
+| `just link` | Symlinks nvim/ and tmux.conf (with backup) |
+| `just zshrc` | Injects shell block into ~/.zshrc between markers |
+| `just ralph` | Clones Ralph, symlinks to ~/.local/bin/ralph |
+| `just npm` | Installs npm globals not covered by Nix |
+| `just status` | Shows current state (symlinks, packages, shell block) |
+| `just clean` | Removes symlinks and zshrc block |
+| `just update` | Runs `nix flake update` and `npm update -g` |
+
+All recipes are idempotent — safe to run repeatedly.
 
 ## Components
 
@@ -65,7 +95,8 @@ Full IDE-like config with lazy.nvim plugin manager. Plugins auto-install on firs
 
 ### Shell (zsh)
 
-A marker-delimited block is appended to `~/.zshrc` (your existing config is preserved). Includes:
+A marker-delimited block is injected into `~/.zshrc` (your existing config is preserved). Includes:
+- Nix daemon sourcing
 - `EDITOR` / `VISUAL` set to nvim
 - fzf shell integration
 - Starship prompt
@@ -127,6 +158,47 @@ After install, set up authentication. You can use either:
 | `gc` | Toggle comment |
 | `Ctrl-s` | Save file |
 
+## Updating
+
+All configs are symlinked, so pulling the repo updates them:
+```bash
+cd ~/.shellsmith
+git pull
+```
+
+For tool and package updates:
+```bash
+nix develop --command just update
+```
+
+## Uninstalling
+
+```bash
+cd ~/.shellsmith
+nix develop --command just clean
+```
+
+This removes symlinks and the zshrc block. To fully clean up:
+```bash
+# Remove installed data
+rm -rf ~/.local/share/nvim/lazy    # Neovim plugins
+rm -rf ~/.local/share/ralph        # Ralph
+rm ~/.local/bin/ralph              # Ralph symlink
+
+# Remove the repo
+rm -rf ~/.shellsmith
+```
+
+## Verification
+
+```bash
+just status                # check symlinks, packages, shell block
+which claude               # should resolve to Nix store or npm global
+which nvim                 # should resolve to Nix store
+nix flake check            # validate the flake
+source ~/.zshrc && dev     # launch the tmux dev session
+```
+
 ## Incident Resolution Playbook
 
 ### Neovim plugins fail to install
@@ -151,9 +223,9 @@ export TERM=xterm-256color
 
 ### Claude Code not found
 ```bash
-npm list -g @anthropic-ai/claude-code  # Check installation
-which claude                            # Check PATH
-source ~/.zshrc                         # Reload shell
+which claude               # Check PATH
+just status                # Check overall state
+source ~/.zshrc            # Reload shell
 ```
 
 ### Ralph not found
@@ -163,51 +235,18 @@ ls ~/.local/share/ralph/ralph.sh        # Check source
 echo $PATH | tr ':' '\n' | grep local  # Verify PATH includes ~/.local/bin
 ```
 
-## Updating
-
-All configs are symlinked, so pulling the repo updates everything:
-```bash
-cd ~/.development-wf
-git pull
-```
-
-For tool updates:
-```bash
-brew upgrade
-npm update -g @anthropic-ai/claude-code @mariozechner/pi-coding-agent
-```
-
-## Uninstalling
-
-```bash
-# Remove symlinks
-rm ~/.config/nvim ~/.tmux.conf
-
-# Remove zshrc block (between the >>> and <<< markers)
-# Edit ~/.zshrc and delete the block between:
-#   # >>> development-wf >>>
-#   # <<< development-wf <<<
-
-# Remove installed data
-rm -rf ~/.local/share/nvim/lazy    # Neovim plugins
-rm -rf ~/.local/share/ralph        # Ralph
-rm ~/.local/bin/ralph              # Ralph symlink
-
-# Remove the repo
-rm -rf ~/.development-wf
-```
-
 ## Troubleshooting
 
 **Icons look broken?** Install a Nerd Font:
 ```bash
-brew install --cask font-jetbrains-mono-nerd-font
+# Via Nix (ad-hoc)
+nix-env -iA nixpkgs.nerd-fonts.jetbrains-mono
 ```
 Then set it as your terminal's font.
 
-**Telescope grep not working?** Ensure ripgrep is installed:
+**Telescope grep not working?** Ensure ripgrep is available — it should be if you're in the Nix dev shell:
 ```bash
-brew install ripgrep
+which rg
 ```
 
 **fzf keybindings not working?** Make sure `source <(fzf --zsh)` runs after Oh My Zsh is sourced in your `.zshrc`.
