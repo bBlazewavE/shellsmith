@@ -1,0 +1,10 @@
+{
+  "notion": {
+    "command": "npx",
+    "args": ["-y", "@anthropic/mcp-server-notion"],
+    "env": {
+      "NOTION_API_KEY": "__NOTION_API_KEY__"
+    },
+    "description": "Notion — pages, databases, search via Notion MCP"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "linear": {
+    "command": "npx",
+    "args": ["-y", "@anthropic/mcp-server-linear"],
+    "env": {
+      "LINEAR_API_KEY": "__LINEAR_API_KEY__"
+    },
+    "description": "Linear — issues, projects, teams via Linear MCP"
+  }
+}

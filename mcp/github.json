@@ -1,0 +1,8 @@
+{
+  "github": {
+    "command": "gh",
+    "args": ["mcp"],
+    "description": "GitHub — issues, PRs, repos, code search via GitHub CLI",
+    "requires": "gh auth login"
+  }
+}
