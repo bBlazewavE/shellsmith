@@ -80,14 +80,12 @@ zshrc:
 npm:
     #!/usr/bin/env bash
     set -euo pipefail
+    export NPM_CONFIG_PREFIX="$HOME/.local"
     PACKAGES=(
-        "@anthropic-ai/claude-code-mcp"
-        "@anthropic-ai/claude-code-sdk"
-        "@anthropic-ai/claude-code-hooks"
         "@mariozechner/pi-coding-agent"
     )
     for pkg in "${PACKAGES[@]}"; do
-        if npm list -g "$pkg" &>/dev/null 2>&1; then
+        if npm list -g --prefix="$HOME/.local" "$pkg" &>/dev/null 2>&1; then
             echo "  ok: $pkg"
         else
             npm install -g "$pkg"
