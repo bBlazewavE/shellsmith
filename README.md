@@ -25,11 +25,12 @@ nix develop --command just setup
 
 ```
 flake.nix              ← declares all packages (Nix devShell)
-justfile               ← recipes: setup, link, zshrc, npm, status, clean, update
+justfile               ← recipes: setup, link, zshrc, npm, mcp, status, clean, update
 bootstrap.sh           ← one-time script (Xcode CLI + Nix)
 shell/zshrc_block.zsh  ← shell config injected into ~/.zshrc
 nvim/                  ← Neovim config (symlinked to ~/.config/nvim)
 tmux/                  ← tmux config (symlinked to ~/.tmux.conf)
+mcp/                   ← MCP server templates (GitHub, Jira, Slack, Linear, Notion)
 ```
 
 **Install flow:** `bootstrap.sh` → `nix develop` → `just setup`
@@ -60,7 +61,11 @@ tmux/                  ← tmux config (symlinked to ~/.tmux.conf)
 | `just link` | Symlinks nvim/ and tmux.conf (with backup) |
 | `just zshrc` | Injects shell block into ~/.zshrc between markers |
 | `just npm` | Installs npm globals not covered by Nix |
-| `just status` | Shows current state (symlinks, packages, shell block) |
+| `just mcp` | Interactive MCP server setup (GitHub, Jira, Slack, etc.) |
+| `just mcp github` | Configure a specific MCP server |
+| `just mcp-list` | List available MCP server templates |
+| `just mcp-status` | Show configured MCP servers |
+| `just status` | Shows current state (symlinks, packages, MCP, shell block) |
 | `just clean` | Removes symlinks and zshrc block |
 | `just update` | Runs `nix flake update` and `npm update -g` |
 
@@ -99,6 +104,38 @@ A marker-delimited block is injected into `~/.zshrc` (your existing config is pr
 - fzf shell integration
 - Starship prompt
 - Aliases and the `dev` function
+
+### MCP Servers (connect AI to external services)
+
+MCP (Model Context Protocol) lets Claude Code and Pi interact with external services — search Jira issues, create GitHub PRs, post to Slack, all from your AI coding session.
+
+**Available servers:**
+
+| Server | Service | Auth required |
+|--------|---------|---------------|
+| `github` | Issues, PRs, repos, code search | `gh auth login` |
+| `jira` | Jira issues, Confluence pages | Atlassian API token |
+| `slack` | Channels, messages, threads | Slack bot token |
+| `linear` | Issues, projects, teams | Linear API key |
+| `notion` | Pages, databases, search | Notion API key |
+
+**Quick setup:**
+
+```bash
+# Interactive — pick which servers to enable
+nix develop --command just mcp
+
+# Direct — configure specific servers
+nix develop --command just mcp github
+nix develop --command just mcp github jira slack
+
+# Check what's configured
+just mcp-status
+```
+
+GitHub is zero-config if you've already run `gh auth login` — it uses the GitHub CLI directly.
+
+For token-based services (Jira, Slack, etc.), the setup will prompt for credentials or read them from environment variables. Templates are in `mcp/` — add your own by dropping a JSON file there.
 
 ### Pi (primary AI interface)
 

@@ -119,6 +119,10 @@ status:
     fi
 
     echo ""
+    echo "=== MCP servers ==="
+    python3 "{{ root }}/mcp/status.py" short
+
+    echo ""
     echo "=== Key binaries ==="
     for cmd in nvim tmux fzf claude node just; do
         if loc="$(command -v "$cmd" 2>/dev/null)"; then
@@ -153,6 +157,30 @@ clean:
     fi
 
     echo "done (nvim/ and tmux/ configs are still in this repo)"
+
+# Configure MCP servers for Claude Code / Pi
+# Usage: just mcp              (interactive picker)
+#        just mcp github       (single server)
+#        just mcp github jira  (multiple servers)
+mcp *SERVERS:
+    {{ root }}/mcp/setup.sh {{ SERVERS }}
+
+# List available MCP server templates
+mcp-list:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "Available MCP servers:"
+    for f in "{{ root }}"/mcp/*.json; do
+        [[ -f "$f" ]] || continue
+        name="$(basename "$f" .json)"
+        desc=$(python3 -c "import json; d=json.load(open('$f')); k=list(d.keys())[0]; print(d[k].get('description',''))" 2>/dev/null || echo "")
+        echo "  $name — $desc"
+    done
+
+# Show MCP servers currently configured in Claude Code
+mcp-status:
+    @echo "=== MCP servers in ~/.claude.json ==="
+    @python3 "{{ root }}/mcp/status.py" full
 
 # Update flake and npm globals
 update:

@@ -1,0 +1,12 @@
+{
+  "jira": {
+    "command": "npx",
+    "args": ["-y", "@anthropic/mcp-server-atlassian"],
+    "env": {
+      "ATLASSIAN_SITE": "__JIRA_SITE__",
+      "ATLASSIAN_USER_EMAIL": "__JIRA_EMAIL__",
+      "ATLASSIAN_API_TOKEN": "__JIRA_API_TOKEN__"
+    },
+    "description": "Jira & Confluence — issues, boards, pages via Atlassian MCP"
+  }
+}
