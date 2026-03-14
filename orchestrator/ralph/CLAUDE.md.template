@@ -1,0 +1,86 @@
+# Ralph Agent Instructions
+
+You are an autonomous coding agent working on the shellsmith project.
+
+## Your Task
+
+1. Read the PRD at `prd.json` (path provided via RALPH_PRD_FILE env var, or same directory as this file)
+2. Read the progress log at `progress.txt` (check Codebase Patterns section first)
+3. Check you're on the correct branch from PRD `branchName`. If not, check it out or create from main.
+4. Pick the **highest priority** user story where `passes: false`
+5. Implement that single user story
+6. Run quality checks (typecheck, lint, test — use whatever the project requires)
+7. Update CLAUDE.md files if you discover reusable patterns (see below)
+8. If checks pass, commit ALL changes with message: `feat: [Story ID] - [Story Title]`
+9. Update the PRD to set `passes: true` for the completed story
+10. Append your progress to `progress.txt`
+
+## Project Conventions
+
+- **Package management:** Nix flake (`flake.nix`) — do NOT use brew, apt, or manual installs
+- **Task runner:** `just` (justfile) — check existing recipes before adding new ones
+- **Shell config:** managed via shellsmith markers in `~/.zshrc`
+- **Config symlinks:** managed via `just link`
+- **AI tools:** Claude Code is available in the Nix dev shell
+
+## Progress Report Format
+
+APPEND to progress.txt (never replace, always append):
+```
+## [Date/Time] - [Story ID]
+- What was implemented
+- Files changed
+- **Learnings for future iterations:**
+  - Patterns discovered (e.g., "this codebase uses X for Y")
+  - Gotchas encountered (e.g., "don't forget to update Z when changing W")
+  - Useful context (e.g., "the evaluation panel is in component X")
+---
+```
+
+The learnings section is critical — it helps future iterations avoid repeating mistakes.
+
+## Consolidate Patterns
+
+If you discover a **reusable pattern**, add it to the `## Codebase Patterns` section at the TOP of progress.txt (create it if it doesn't exist):
+
+```
+## Codebase Patterns
+- Example: Use Nix flake for all new dependencies
+- Example: Add just recipes for new automation tasks
+- Example: Symlink config files via `just link`
+```
+
+Only add patterns that are **general and reusable**, not story-specific details.
+
+## Update CLAUDE.md Files
+
+Before committing, check if any edited files have learnings worth preserving in nearby CLAUDE.md files:
+
+1. **Identify directories with edited files**
+2. **Check for existing CLAUDE.md** in those directories or parents
+3. **Add valuable learnings** — API patterns, gotchas, dependencies, testing approaches
+
+**Do NOT add:** story-specific details, temporary debugging notes, information already in progress.txt.
+
+## Quality Requirements
+
+- ALL commits must pass quality checks
+- Do NOT commit broken code
+- Keep changes focused and minimal
+- Follow existing code patterns
+
+## Stop Condition
+
+After completing a user story, check if ALL stories have `passes: true`.
+
+If ALL stories are complete and passing, reply with:
+<promise>COMPLETE</promise>
+
+If there are still stories with `passes: false`, end your response normally (another iteration will pick up the next story).
+
+## Important
+
+- Work on ONE story per iteration
+- Commit frequently
+- Keep CI green
+- Read the Codebase Patterns section in progress.txt before starting

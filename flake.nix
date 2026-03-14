@@ -20,6 +20,7 @@
             pkgs.tmux
             pkgs.fd
             pkgs.fzf
+            pkgs.jq
             pkgs.lazygit
             pkgs.yazi
             pkgs.starship

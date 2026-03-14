@@ -1,19 +1,37 @@
 name: plan-execute
-description: Plan with a strong model, execute with a fast model
+description: Plan with a strong model, execute autonomously via ralph loop
 steps:
   - name: plan
     model: claude-sonnet-4-5-20250929
-    max_tokens: 4096
-    system_prompt: |
-      You are a senior software architect. Given a task, create a clear,
-      actionable implementation plan with specific steps. Include file paths
-      and function names where possible.
-    requires_approval: false
-  - name: execute
-    model: claude-haiku-4-5-20251001
     max_tokens: 8192
     system_prompt: |
-      You are a precise code implementer. Given a task and an approved plan,
-      implement each step. Output code changes as clearly labeled file blocks.
-    input_from: plan
-    requires_approval: true
+      You are a senior software architect. Given a task, create a clear,
+      actionable implementation plan structured as user stories for an
+      autonomous coding agent.
+
+      Output ONLY a valid JSON object with this exact schema:
+      {
+        "project": "<short project name>",
+        "branchName": "ralph/<kebab-case-feature-name>",
+        "description": "<one-line summary>",
+        "userStories": [
+          {
+            "id": "US-001",
+            "title": "<short title>",
+            "description": "<what and why>",
+            "acceptanceCriteria": ["<criterion 1>", "<criterion 2>"],
+            "priority": 1,
+            "passes": false,
+            "notes": ""
+          }
+        ]
+      }
+
+      Rules:
+      - Each story must fit in a single Claude Code context window (~30 min of work)
+      - Stories must be ordered by dependency (priority 1 = do first)
+      - Acceptance criteria must be concrete and testable
+      - Include file paths and function names where possible
+      - branchName must start with "ralph/"
+      - Output raw JSON only — no markdown fences, no commentary
+    requires_approval: false

@@ -122,7 +122,7 @@ status:
 
     echo ""
     echo "=== Key binaries ==="
-    for cmd in nvim tmux fzf claude node just; do
+    for cmd in nvim tmux fzf jq claude node just; do
         if loc="$(command -v "$cmd" 2>/dev/null)"; then
             echo "  ok: $cmd → $loc"
         else
@@ -191,6 +191,10 @@ orch-setup:
     pip3 install --user anthropic pyyaml
     mkdir -p ~/.local/share/shellsmith/orchestrator/tasks
     mkdir -p ~/.local/share/shellsmith/orchestrator/logs
+    mkdir -p ~/.local/share/shellsmith/orchestrator/workdirs
+    chmod +x {{ root }}/orchestrator/ralph/ralph.sh
+    @command -v jq >/dev/null || echo "WARNING: jq not found — enter nix develop shell"
+    @command -v claude >/dev/null || echo "WARNING: claude not found — enter nix develop shell"
     @echo "orchestrator: setup complete"
 
 # Submit a task for async planning
@@ -205,9 +209,13 @@ orch-status:
 orch-show ID:
     python3 {{ root }}/orchestrator/orch.py show {{ ID }}
 
-# Approve a planned task for execution
-orch-approve ID:
-    python3 {{ root }}/orchestrator/orch.py approve {{ ID }}
+# Approve a planned task — launches ralph in background
+orch-approve ID *ARGS:
+    python3 {{ root }}/orchestrator/orch.py approve {{ ID }} {{ ARGS }}
+
+# Show ralph story progress for a task
+orch-stories ID:
+    python3 {{ root }}/orchestrator/orch.py stories {{ ID }}
 
 # Cancel an orchestrator task
 orch-cancel ID:
