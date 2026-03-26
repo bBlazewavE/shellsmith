@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Weekly run to catch upstream breakage early
+    - cron: '0 0 * * 0'
+
+jobs:
+  flake-check:
+    name: Nix Flake Check
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: DeterminateSystems/nix-installer-action@main
+
+      - name: Run flake check
+        run: nix flake check
+
+  flake-build:
+    name: Nix Flake Build Dev Shell
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: DeterminateSystems/nix-installer-action@main
+
+      - name: Build dev shell
+        run: nix develop --command echo "Dev shell built successfully"
