@@ -93,6 +93,10 @@ npm:
         fi
     done
 
+# Run environment diagnostics
+doctor:
+    bash {{ root }}/scripts/doctor.sh
+
 # Show current state
 status:
     #!/usr/bin/env bash
@@ -179,6 +183,109 @@ mcp-list:
 mcp-status:
     @echo "=== MCP servers in ~/.claude.json ==="
     @python3 "{{ root }}/mcp/status.py" full
+
+# Create a backup snapshot of current configs
+backup:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+    BACKUP_DIR="$HOME/.local/share/shellsmith/backups/$TIMESTAMP"
+    mkdir -p "$BACKUP_DIR"
+
+    echo "Creating backup snapshot: $TIMESTAMP"
+
+    # Backup nvim config if it exists
+    if [[ -d "$HOME/.config/nvim" ]]; then
+        cp -r "$HOME/.config/nvim" "$BACKUP_DIR/nvim"
+        echo "  backed up: ~/.config/nvim → $BACKUP_DIR/nvim"
+    fi
+
+    # Backup tmux config if it exists
+    if [[ -f "$HOME/.tmux.conf" ]]; then
+        cp "$HOME/.tmux.conf" "$BACKUP_DIR/tmux.conf"
+        echo "  backed up: ~/.tmux.conf → $BACKUP_DIR/tmux.conf"
+    fi
+
+    # Backup zshrc if it exists
+    if [[ -f "$HOME/.zshrc" ]]; then
+        cp "$HOME/.zshrc" "$BACKUP_DIR/zshrc"
+        echo "  backed up: ~/.zshrc → $BACKUP_DIR/zshrc"
+    fi
+
+    echo "Backup saved to: $BACKUP_DIR"
+
+# Restore configs from a backup snapshot
+restore:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    BACKUP_BASE="$HOME/.local/share/shellsmith/backups"
+
+    if [[ ! -d "$BACKUP_BASE" ]]; then
+        echo "error: no backups found in $BACKUP_BASE"
+        exit 1
+    fi
+
+    # List available backups
+    echo "Available backups:"
+    mapfile -t backups < <(ls -1d "$BACKUP_BASE"/*/ 2>/dev/null | sort -r)
+
+    if [[ ${#backups[@]} -eq 0 ]]; then
+        echo "  (none)"
+        exit 1
+    fi
+
+    for i in "${!backups[@]}"; do
+        timestamp=$(basename "${backups[$i]}")
+        echo "  [$((i+1))] $timestamp"
+    done
+
+    echo ""
+    read -p "Select backup to restore (number): " selection
+
+    # Validate selection
+    if ! [[ "$selection" =~ ^[0-9]+$ ]] || ((selection < 1 || selection > ${#backups[@]})); then
+        echo "error: invalid selection"
+        exit 1
+    fi
+
+    selected_backup="${backups[$((selection-1))]}"
+    timestamp=$(basename "$selected_backup")
+
+    echo "Restoring from: $timestamp"
+
+    # Create restore snapshot before overwriting
+    restore_snapshot="$HOME/.local/share/shellsmith/backups/.pre-restore-$(date +%Y%m%d-%H%M%S)"
+    mkdir -p "$restore_snapshot"
+
+    # Restore nvim
+    if [[ -d "$selected_backup/nvim" ]]; then
+        if [[ -d "$HOME/.config/nvim" ]]; then
+            cp -r "$HOME/.config/nvim" "$restore_snapshot/nvim"
+        fi
+        rm -rf "$HOME/.config/nvim"
+        cp -r "$selected_backup/nvim" "$HOME/.config/nvim"
+        echo "  restored: ~/.config/nvim"
+    fi
+
+    # Restore tmux.conf
+    if [[ -f "$selected_backup/tmux.conf" ]]; then
+        if [[ -f "$HOME/.tmux.conf" ]]; then
+            cp "$HOME/.tmux.conf" "$restore_snapshot/tmux.conf"
+        fi
+        cp "$selected_backup/tmux.conf" "$HOME/.tmux.conf"
+        echo "  restored: ~/.tmux.conf"
+    fi
+
+    # Restore zshrc
+    if [[ -f "$selected_backup/zshrc" ]]; then
+        if [[ -f "$HOME/.zshrc" ]]; then
+            cp "$HOME/.zshrc" "$restore_snapshot/zshrc"
+        fi
+        cp "$selected_backup/zshrc" "$HOME/.zshrc"
+        echo "  restored: ~/.zshrc"
+    fi
+
+    echo "Restore complete (pre-restore snapshot saved to: $restore_snapshot)"
 
 # Update flake and npm globals
 update:

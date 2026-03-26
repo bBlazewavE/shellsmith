@@ -1,0 +1,4 @@
+# User configs and overrides
+nvim/lua/plugins/user.lua
+orchestrator/.env
+orchestrator/state/
